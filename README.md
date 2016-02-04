@@ -35,6 +35,25 @@ var parseUri = require('parse-uri')
 parseUri('myURL')
 ```
 
+## API
+
+### parseURI(str, [options])
+
+#### options
+
+##### strictMode
+
+Type: `boolean`
+Default: `false`
+
+Determinate if use `loose` or `strict` mode.
+
+> Loose mode deviates slightly from the official generic URI spec ([RFC 3986](http://tools.ietf.org/html/rfc3986))
+
+### Related
+
+* [is-uri](https://github.com/Kikobeats/is-uri#is-uri) – Determinate if a string is a valid URI.
+
 ## License
 
 MIT © [Kiko Beats](http://kikobeats.com)
