@@ -1,5 +1,7 @@
 # parse-uri
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/Kikobeats/parse-uri.svg)](https://greenkeeper.io/)
+
 ![Last version](https://img.shields.io/github/tag/Kikobeats/parse-uri.svg?style=flat-square)
 [![Build Status](http://img.shields.io/travis/Kikobeats/parse-uri/master.svg?style=flat-square)](https://travis-ci.org/Kikobeats/parse-uri)
 [![Dependency status](http://img.shields.io/david/Kikobeats/parse-uri.svg?style=flat-square)](https://david-dm.org/Kikobeats/parse-uri)
