@@ -1,10 +1,27 @@
 'use strict'
 
-module.exports = function parseURI (str, opts) {
+function parseURI (str, opts) {
+  if (!str) return undefined
+
   opts = opts || {}
 
   var o = {
-    key: ['source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host', 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'],
+    key: [
+      'source',
+      'protocol',
+      'authority',
+      'userInfo',
+      'user',
+      'password',
+      'host',
+      'port',
+      'relative',
+      'path',
+      'directory',
+      'file',
+      'query',
+      'anchor'
+    ],
     q: {
       name: 'queryKey',
       parser: /(?:^|&)([^&=]*)=?([^&]*)/g
@@ -28,3 +45,5 @@ module.exports = function parseURI (str, opts) {
 
   return uri
 }
+
+module.exports = parseURI
