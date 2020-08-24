@@ -22,19 +22,9 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "browserify": "latest",
-    "coffee-script": "latest",
-    "coffeeify": "latest",
-    "git-dirty": "latest",
-    "gulp": "latest",
-    "gulp-header": "latest",
-    "gulp-uglify": "latest",
-    "gulp-util": "latest",
     "mocha": "latest",
     "should": "latest",
-    "standard": "latest",
-    "vinyl-buffer": "latest",
-    "vinyl-source-stream": "latest"
+    "standard": "latest"
   },
   "engines": {
     "node": ">= 0.10"
