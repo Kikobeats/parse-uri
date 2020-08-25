@@ -7,7 +7,7 @@
 [![NPM Status](http://img.shields.io/npm/dm/parse-uri.svg?style=flat-square)](https://www.npmjs.org/package/parse-uri)
 [![Donate](https://img.shields.io/badge/donate-paypal-blue.svg?style=flat-square)](https://paypal.me/Kikobeats)
 
-> Lightweight module for parse an URI. Based in [Steven Levithan](http://blog.stevenlevithan.com/archives/parseuri) method.
+> Lightweight module for parsing an URI Based in [Steven Levithan](http://blog.stevenlevithan.com/archives/parseuri) method.
 
 ## Install
 

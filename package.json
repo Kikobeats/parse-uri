@@ -1,6 +1,6 @@
 {
   "name": "parse-uri",
-  "description": "Lightweight module for parse an URI.",
+  "description": "Lightweight module for parsing an URI",
   "homepage": "https://github.com/Kikobeats/parse-uri",
   "version": "1.0.2",
   "main": "./index.js",
