@@ -1,3 +1,10 @@
+## <small>1.0.3 (2020-08-25)</small>
+
+* fix: description ([257a917](https://github.com/kikobeats/parse-uri/commit/257a917))
+* Update .travis.yml ([d2ef410](https://github.com/kikobeats/parse-uri/commit/d2ef410))
+
+
+
 ## <small>1.0.2 (2020-08-24)</small>
 
 * Add minimal documentation ([bf6cc25](https://github.com/kikobeats/parse-uri/commit/bf6cc25))
