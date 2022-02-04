@@ -1,24 +1,21 @@
-/* global describe, it */
-
 'use strict'
 
-var URI = require('..')
-var should = require('should')
+const URI = require('..')
 
-describe('parse uri', function () {
-  it('valid', function () {
-    ;[
-      'https://github.com/garycourt/uri-js',
-      'magnet:?xt=urn:sha1:PDAQRAOQQRYS76MRZJ33LK4MMVZBDSCL',
-      'https://🐀.ws/🐀🐀'
-    ].forEach(function (url) {
-      should(URI(url).protocol).be.ok()
-    })
+const test = require('ava')
+
+test('valid', function (t) {
+  ;[
+    'https://github.com/garycourt/uri-js',
+    'magnet:?xt=urn:sha1:PDAQRAOQQRYS76MRZJ33LK4MMVZBDSCL',
+    'https://🐀.ws/🐀🐀'
+  ].forEach(function (url) {
+    t.truthy(URI(url).protocol)
   })
+})
 
-  it('invalid', function () {
-    ;[undefined, null, false, ''].forEach(function (url) {
-      should(URI(url)).be.undefined()
-    })
+test('invalid', function (t) {
+  ;[undefined, null, false, ''].forEach(function (url) {
+    t.undefined(URI(url))
   })
 })
