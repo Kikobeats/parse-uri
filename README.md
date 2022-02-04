@@ -12,22 +12,10 @@
 $ npm install parse-uri --save
 ```
 
-If you want to use in the browser (powered by [Browserify](http://browserify.org/)):
-
-```bash
-$ bower install parse-uri --save
-```
-
-and later link in your HTML:
-
-```html
-<script src="bower_components/parse-uri/dist/parse-uri.js"></script>
-```
-
 ## Usage
 
 ```js
-var parseUri = require('parse-uri')
+const parseUri = require('parse-uri')
 
 parseUri('myURL')
 ```
