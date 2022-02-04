@@ -45,17 +45,17 @@
   ],
   "scripts": {
     "clean": "rm -rf node_modules",
-    "lint": "standard",
-    "pretest": "npm run lint",
-    "test": "c8 ava",
     "contributors": "(git-authors-cli && finepack && git add package.json && git commit -m 'build: contributors' --no-verify) || true",
+    "lint": "standard",
     "postrelease": "npm run release:tags && npm run release:github && (ci-publish || npm publish --access=public)",
     "prerelease": "npm run update:check && npm run contributors",
+    "pretest": "npm run lint",
+    "release": "standard-version -a",
     "release:github": "conventional-github-releaser -p angular",
     "release:tags": "git push --follow-tags origin HEAD:master",
-    "release": "standard-version -a",
-    "update:check": "ncu -- --error-level 2",
-    "update": "ncu -u"
+    "test": "c8 ava",
+    "update": "ncu -u",
+    "update:check": "ncu -- --error-level 2"
   },
   "license": "MIT",
   "commitlint": {
