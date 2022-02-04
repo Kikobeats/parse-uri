@@ -16,6 +16,6 @@ test('valid', function (t) {
 
 test('invalid', function (t) {
   ;[undefined, null, false, ''].forEach(function (url) {
-    t.undefined(URI(url))
+    t.is(URI(url), undefined)
   })
 })

@@ -1,9 +1,7 @@
 'use strict'
 
-function parseURI (str, opts) {
+module.exports = (str, opts = {}) => {
   if (!str) return undefined
-
-  opts = opts || {}
 
   const o = {
     key: [
@@ -45,5 +43,3 @@ function parseURI (str, opts) {
 
   return uri
 }
-
-module.exports = parseURI
