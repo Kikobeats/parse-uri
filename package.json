@@ -2,7 +2,7 @@
   "name": "parse-uri",
   "description": "Lightweight module for parsing an URI",
   "homepage": "https://github.com/Kikobeats/parse-uri",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "main": "src/index.js",
   "author": {
     "email": "josefrancisco.verdu@gmail.com",
