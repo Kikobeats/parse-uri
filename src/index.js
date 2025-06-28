@@ -3,66 +3,78 @@
 module.exports = (str, opts = {}) => {
   if (!str) return undefined
 
-  const o = {
-    key: [
-      'source',
-      'protocol',
-      'authority',
-      'userInfo',
-      'user',
-      'password',
-      'host',
-      'port',
-      'relative',
-      'path',
-      'directory',
-      'file',
-      'query',
-      'anchor'
-    ],
-    q: {
-      name: 'queryKey',
-      parser: /(?:^|&)([^&=]*)=?([^&]*)/g
-    },
-    parser: {
-      strict:
-        /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/,
-      loose:
-        /^(?:(?![^:@]+:[^:@/]*@)([^:/?#.]+):)?(?:\/\/)?([^/?#]*)([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
-    }
+  const queryParser = /(?:^|&)([^&=]*)=?([^&]*)/g
+  const patterns = {
+    // Captures: protocol, authority, path, query, fragment
+    strict:
+      /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/,
+    // Loose pattern with negative lookahead to avoid user:pass@ patterns
+    loose:
+      /^(?:(?![^:@]+:[^:@/]*@)([^:/?#.]+):)?(?:\/\/)?([^/?#]*)([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
   }
 
-  const pattern = opts.strictMode ? o.parser.strict : o.parser.loose
+  const pattern = opts.strictMode ? patterns.strict : patterns.loose
   const matches = pattern.exec(str)
   if (!matches) return undefined
 
-  const uri = {}
-  uri[o.key[0]] = str
-  uri[o.key[1]] = matches[1] || ''
-  uri[o.key[2]] = matches[2] || ''
-  uri[o.key[8]] = matches[3] || ''
-  uri[o.key[12]] = matches[4] || ''
-  uri[o.key[13]] = matches[5] || ''
+  // Destructure regex matches for clarity
+  const [
+    ,
+    protocol = '',
+    authority = '',
+    relative = '',
+    query = '',
+    anchor = ''
+  ] = matches
 
-  // Further breakdown and parsing can be done here if needed
-  // For example, splitting authority into userInfo, host, and port
-  if (uri[o.key[2]]) {
+  // Initialize all URI components
+  const uri = {
+    source: str,
+    protocol,
+    authority,
+    relative,
+    query,
+    anchor,
+    userInfo: '',
+    user: '',
+    password: '',
+    host: '',
+    port: '',
+    path: relative,
+    directory: '',
+    file: '',
+    queryKey: {}
+  }
+
+  // Parse authority into user info, host, and port
+  if (authority) {
     const authorityPattern =
       /^(?:(([^:@]*)(?::([^:@]*))?)?@)?([^:/?#]*)(?::(\d*))?/
-    const authorityMatches = authorityPattern.exec(uri[o.key[2]])
+    const authorityMatches = authorityPattern.exec(authority)
     if (authorityMatches) {
-      uri[o.key[3]] = authorityMatches[1] || ''
-      uri[o.key[4]] = authorityMatches[2] || ''
-      uri[o.key[5]] = authorityMatches[3] || ''
-      uri[o.key[6]] = authorityMatches[4] || ''
-      uri[o.key[7]] = authorityMatches[5] || ''
+      const [, userInfo = '', user = '', password = '', host = '', port = ''] =
+        authorityMatches
+      Object.assign(uri, { userInfo, user, password, host, port })
     }
   }
 
-  uri[o.q.name] = {}
-  uri[o.key[12]].replace(o.q.parser, function (_, $1, $2) {
-    if ($1) uri[o.q.name][$1] = $2
-  })
+  // Parse the relative part into directory and file
+  if (relative) {
+    const lastSlashIndex = relative.lastIndexOf('/')
+    if (lastSlashIndex > -1) {
+      uri.directory = relative.substring(0, lastSlashIndex + 1)
+      uri.file = relative.substring(lastSlashIndex + 1)
+    } else {
+      uri.file = relative
+    }
+  }
+
+  // Parse query parameters
+  if (query) {
+    for (const [, key, value] of query.matchAll(queryParser)) {
+      if (key) uri.queryKey[key] = value
+    }
+  }
 
   return uri
 }
