@@ -26,14 +26,12 @@
     "@commitlint/config-conventional": "latest",
     "@ksmithut/prettier-standard": "latest",
     "ava": "latest",
-    "benchmark": "latest",
     "c8": "latest",
     "ci-publish": "latest",
     "finepack": "latest",
     "git-authors-cli": "latest",
     "github-generate-release": "latest",
     "nano-staged": "latest",
-    "parseuri": "latest",
     "simple-git-hooks": "latest",
     "standard": "latest",
     "standard-markdown": "latest",
@@ -46,7 +44,6 @@
     "src"
   ],
   "scripts": {
-    "benchmark": "node benchmark/index.js",
     "clean": "rm -rf node_modules",
     "contributors": "(npx git-authors-cli && npx finepack && git add package.json && git commit -m 'build: contributors' --no-verify) || true",
     "lint": "standard",
