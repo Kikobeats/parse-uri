@@ -201,35 +201,69 @@ suite.on('complete', function () {
 function runMemoryTest () {
   const iterations = BENCHMARK_CONFIG.MEMORY_TEST_ITERATIONS
 
-  // Test local implementation
-  const localMemBefore = process.memoryUsage().heapUsed
-  for (let i = 0; i < iterations; i++) {
-    parseUriLocal(testUrls.complex)
-  }
-  const localMemAfter = process.memoryUsage().heapUsed
-  const localMemDiff = localMemAfter - localMemBefore
-
-  // Force garbage collection if available
+  // Force garbage collection before starting if available
   if (global.gc) {
     global.gc()
   }
 
-  // Test npm implementation
-  const npmMemBefore = process.memoryUsage().heapUsed
-  for (let i = 0; i < iterations; i++) {
-    parseUriNpm(testUrls.complex)
-  }
-  const npmMemAfter = process.memoryUsage().heapUsed
-  const npmMemDiff = npmMemAfter - npmMemBefore
+  // More reliable memory measurement: run multiple samples and take average
+  const sampleCount = 5
+  let localTotalMemory = 0
+  let npmTotalMemory = 0
 
-  console.log(`parse-uri: ${(localMemDiff / 1024 / 1024).toFixed(2)} MB`)
-  console.log(`parseuri:  ${(npmMemDiff / 1024 / 1024).toFixed(2)} MB`)
+  for (let sample = 0; sample < sampleCount; sample++) {
+    // Test local implementation
+    const localResults = []
+    const localMemBefore = process.memoryUsage().heapUsed
+
+    for (let i = 0; i < iterations / sampleCount; i++) {
+      localResults.push(parseUriLocal(testUrls.complex))
+    }
+
+    const localMemAfter = process.memoryUsage().heapUsed
+    const localMemDiff = Math.max(0, localMemAfter - localMemBefore) // Ensure non-negative
+    localTotalMemory += localMemDiff
+
+    // Force garbage collection between tests if available
+    if (global.gc) {
+      global.gc()
+    }
+
+    // Test npm implementation
+    const npmResults = []
+    const npmMemBefore = process.memoryUsage().heapUsed
+
+    for (let i = 0; i < iterations / sampleCount; i++) {
+      npmResults.push(parseUriNpm(testUrls.complex))
+    }
+
+    const npmMemAfter = process.memoryUsage().heapUsed
+    const npmMemDiff = Math.max(0, npmMemAfter - npmMemBefore) // Ensure non-negative
+    npmTotalMemory += npmMemDiff
+
+    // Force garbage collection after each sample
+    if (global.gc) {
+      global.gc()
+    }
+  }
+
+  // Calculate averages
+  const localMemDiff = localTotalMemory / sampleCount
+  const npmMemDiff = npmTotalMemory / sampleCount
+
+  console.log(`parse-uri: ${(localMemDiff / 1024 / 1024).toFixed(2)} MB (avg)`)
+  console.log(`parseuri:  ${(npmMemDiff / 1024 / 1024).toFixed(2)} MB (avg)`)
 
   const memWinner = localMemDiff < npmMemDiff ? 'parse-uri' : 'parseuri'
   const memSavings = Math.abs(localMemDiff - npmMemDiff) / 1024 / 1024
-  console.log(
-    `Winner: ${memWinner} (${memSavings.toFixed(2)} MB less memory used)\n`
-  )
+
+  if (memSavings < 0.01) {
+    console.log('Memory usage is essentially equivalent\n')
+  } else {
+    console.log(
+      `Winner: ${memWinner} (${memSavings.toFixed(2)} MB less memory used)\n`
+    )
+  }
 
   // Update README with results
   updateReadmeWithResults(
@@ -242,116 +276,6 @@ function runMemoryTest () {
     performanceResults
   )
 }
-
-// Function comparison test - both libraries are now spec compliant
-console.log('🔍 Feature Comparison:\n')
-
-const comparisonResults = []
-
-Object.entries(testUrls).forEach(([name, url]) => {
-  try {
-    const localResult = parseUriLocal(url)
-    const npmResult = parseUriNpm(url)
-
-    // Compare standard URL fields directly (both libraries are now spec compliant)
-    const standardFields = [
-      'protocol',
-      'hostname',
-      'host',
-      'pathname',
-      'search',
-      'hash',
-      'origin'
-    ]
-    const differences = []
-
-    standardFields.forEach(field => {
-      const localValue = localResult[field] || ''
-      const npmValue = npmResult[field] || ''
-
-      if (localValue !== npmValue) {
-        differences.push({
-          field,
-          local: localValue,
-          npm: npmValue
-        })
-      }
-    })
-
-    if (differences.length > 0) {
-      differences.forEach(d => {
-        comparisonResults.push({
-          url,
-          field: d.field,
-          local: d.local,
-          npm: d.npm,
-          status: '⚠️ Different'
-        })
-      })
-    } else {
-      comparisonResults.push({
-        url,
-        field: 'all standard fields',
-        local: '✅ Match',
-        npm: '✅ Match',
-        status: '✅ **Identical**'
-      })
-    }
-  } catch (error) {
-    comparisonResults.push({
-      url,
-      field: 'error',
-      local: 'Error',
-      npm: error.message,
-      status: '❌ Error'
-    })
-  }
-})
-
-// Print detailed comparison table
-console.log('\n📊 Detailed Feature Comparison Table:')
-console.log('='.repeat(BENCHMARK_CONFIG.TABLE_SEPARATORS.LONG))
-console.log(
-  '| Input URL'.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.URL) +
-    '| Field'.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.FIELD) +
-    '| parse-uri'.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.PARSE_URI) +
-    '| parseuri'.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.PARSEURI) +
-    '| Status'.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.STATUS) +
-    '|'
-)
-console.log(
-  '|' +
-    '-'.repeat(BENCHMARK_CONFIG.COLUMN_WIDTHS.URL - 1) +
-    '|' +
-    '-'.repeat(BENCHMARK_CONFIG.COLUMN_WIDTHS.FIELD - 1) +
-    '|' +
-    '-'.repeat(BENCHMARK_CONFIG.COLUMN_WIDTHS.PARSE_URI - 1) +
-    '|' +
-    '-'.repeat(BENCHMARK_CONFIG.COLUMN_WIDTHS.PARSEURI - 1) +
-    '|' +
-    '-'.repeat(BENCHMARK_CONFIG.COLUMN_WIDTHS.STATUS - 1) +
-    '|'
-)
-
-comparisonResults.forEach(result => {
-  const maxUrlLength = BENCHMARK_CONFIG.COLUMN_WIDTHS.URL - 5 // Reserve space for "..." and padding
-  const inputUrl = (
-    result.url.length > maxUrlLength
-      ? result.url.substring(0, maxUrlLength - 3) + '...'
-      : result.url
-  ).padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.URL - 1)
-  const field = result.field.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.FIELD - 1)
-  const local = `"${result.local}"`.padEnd(
-    BENCHMARK_CONFIG.COLUMN_WIDTHS.PARSE_URI - 1
-  )
-  const npm = `"${result.npm}"`.padEnd(
-    BENCHMARK_CONFIG.COLUMN_WIDTHS.PARSEURI - 1
-  )
-  const status = result.status.padEnd(BENCHMARK_CONFIG.COLUMN_WIDTHS.STATUS - 1)
-  console.log(`| ${inputUrl}| ${field}| ${local}| ${npm}| ${status}|`)
-})
-
-console.log('='.repeat(BENCHMARK_CONFIG.TABLE_SEPARATORS.MEDIUM))
 
 // Store performance and comparison results globally
 const performanceResults = {}
@@ -368,13 +292,11 @@ function updateReadmeWithResults (memoryResults, perfResults) {
     // Generate tables with actual results
     const performanceTable = generatePerformanceTable(perfResults)
     const memoryTable = generateMemoryTable(memoryResults)
-    const featureTable = generateFeatureTable()
 
     // Generate complete README content
     const readmeContent = generateCompleteReadme(
       performanceTable,
       memoryTable,
-      featureTable,
       memoryResults
     )
 
@@ -437,46 +359,40 @@ function generatePerformanceTable (perfResults) {
 }
 
 function generateMemoryTable (memoryResults) {
-  const { localMemDiff, npmMemDiff, memWinner } = memoryResults
+  const { localMemDiff, npmMemDiff, memWinner, memSavings } = memoryResults
 
-  return `| Implementation | Memory Usage | Difference |
-|----------------|-------------:|------------|
-| parse-uri | ${(localMemDiff / 1024 / 1024).toFixed(2)} MB | ${
-    memWinner === 'parse-uri' ? '✅ **Winner**' : ''
+  const localMB = (localMemDiff / 1024 / 1024).toFixed(2)
+  const npmMB = (npmMemDiff / 1024 / 1024).toFixed(2)
+
+  // Handle very small differences
+  const isEquivalent = memSavings < 0.01
+
+  return `| Implementation | Memory Usage (avg) | Result |
+|----------------|-------------------:|--------|
+| parse-uri | ${localMB} MB | ${
+    isEquivalent
+      ? '✅ Equivalent'
+      : memWinner === 'parse-uri'
+        ? '✅ **Winner**'
+        : ''
   } |
-| parseuri | ${(npmMemDiff / 1024 / 1024).toFixed(2)} MB | ${
-    memWinner === 'parseuri'
-      ? '✅ **Winner**'
-      : (Math.abs(localMemDiff - npmMemDiff) / 1024 / 1024).toFixed(2) +
-      ' MB more'
+| parseuri | ${npmMB} MB | ${
+    isEquivalent
+      ? '✅ Equivalent'
+      : memWinner === 'parseuri'
+        ? '✅ **Winner**'
+        : `${memSavings.toFixed(2)} MB more`
   } |`
 }
 
-function generateFeatureTable () {
-  return comparisonResults
-    .map(result => {
-      const maxUrlLength = BENCHMARK_CONFIG.COLUMN_WIDTHS.URL - 5 // Reserve space for markdown formatting
-      const url =
-        result.url.length > maxUrlLength
-          ? result.url.substring(0, maxUrlLength - 3) + '...'
-          : result.url
-      return `| \`${url}\` | \`${result.field}\` | \`"${result.local}"\` | \`"${result.npm}"\` | ${result.status} |`
-    })
-    .join('\n')
-}
-
-function generateCompleteReadme (
-  performanceTable,
-  memoryTable,
-  featureTable,
-  memoryResults
-) {
+function generateCompleteReadme (performanceTable, memoryTable, memoryResults) {
   const { memWinner, memSavings } = memoryResults
   const currentDate = new Date().toISOString().split('T')[0]
 
   return `# Parse URI Benchmark Results
 
-*Generated on ${currentDate}*
+> Generated on ${currentDate}.
+> This benchmark report is automatically generated by running \`node benchmark/index.js\`.
 
 ## Overview
 
@@ -495,30 +411,16 @@ ${performanceTable}
 
 ${memoryTable}
 
-*Winner: ${memWinner} saves ${memSavings.toFixed(2)} MB*
+${
+  memSavings < 0.01
+    ? '*Memory usage is essentially equivalent*'
+    : `*Winner: ${memWinner} saves ${memSavings.toFixed(2)} MB*`
+}
 
-## Feature Comparison
-
-Direct comparison of standard URL fields between both libraries:
-
-| Input URL | Field | parse-uri | parseuri | Status |
-|----------|-------|-----------|----------|--------|
-${featureTable}
-
-### Summary
-
-- **parse-uri** is WHATWG URL Standard compliant
-- **parseuri** uses legacy field formats
-- **parse-uri** includes modern features like URLSearchParams
-- **parse-uri** provides superior performance and memory efficiency
-
----
-
-*This benchmark report is automatically generated by running \`node benchmark/index.js\`*
 `
 }
 
-console.log('\n🚀 Starting performance benchmarks...\n')
+console.log('🚀 Starting performance benchmarks...\n')
 
 // Run the benchmark
 suite.run({ async: true })
