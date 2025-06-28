@@ -5,8 +5,10 @@ module.exports = (str, opts = {}) => {
 
   const queryParser = /(?:^|&)([^&=]*)=?([^&]*)/g
   const patterns = {
+    // Captures: protocol, authority, path, query, fragment
     strict:
       /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/,
+    // Loose pattern with negative lookahead to avoid user:pass@ patterns
     loose:
       /^(?:(?![^:@]+:[^:@/]*@)([^:/?#.]+):)?(?:\/\/)?([^/?#]*)([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
   }
@@ -15,59 +17,64 @@ module.exports = (str, opts = {}) => {
   const matches = pattern.exec(str)
   if (!matches) return undefined
 
+  // Destructure regex matches for clarity
+  const [
+    ,
+    protocol = '',
+    authority = '',
+    relative = '',
+    query = '',
+    anchor = ''
+  ] = matches
+
   // Initialize all URI components
   const uri = {
     source: str,
-    protocol: matches[1] || '',
-    authority: matches[2] || '',
-    relative: matches[3] || '',
-    query: matches[4] || '',
-    anchor: matches[5] || '',
+    protocol,
+    authority,
+    relative,
+    query,
+    anchor,
     userInfo: '',
     user: '',
     password: '',
     host: '',
     port: '',
-    path: '',
+    path: relative,
     directory: '',
     file: '',
     queryKey: {}
   }
 
   // Parse authority into user info, host, and port
-  if (uri.authority) {
+  if (authority) {
     const authorityPattern =
       /^(?:(([^:@]*)(?::([^:@]*))?)?@)?([^:/?#]*)(?::(\d*))?/
-    const authorityMatches = authorityPattern.exec(uri.authority)
+    const authorityMatches = authorityPattern.exec(authority)
     if (authorityMatches) {
-      uri.userInfo = authorityMatches[1] || ''
-      uri.user = authorityMatches[2] || ''
-      uri.password = authorityMatches[3] || ''
-      uri.host = authorityMatches[4] || ''
-      uri.port = authorityMatches[5] || ''
+      const [, userInfo = '', user = '', password = '', host = '', port = ''] =
+        authorityMatches
+      Object.assign(uri, { userInfo, user, password, host, port })
     }
   }
 
-  // Parse the relative part into path, directory, and file
-  if (uri.relative) {
-    uri.path = uri.relative
-
-    const pathParts = uri.relative.split('/')
-    if (pathParts.length > 1) {
-      // Has directory structure
-      uri.file = pathParts[pathParts.length - 1]
-      uri.directory = pathParts.slice(0, -1).join('/') + '/'
+  // Parse the relative part into directory and file
+  if (relative) {
+    const lastSlashIndex = relative.lastIndexOf('/')
+    if (lastSlashIndex > -1) {
+      uri.directory = relative.substring(0, lastSlashIndex + 1)
+      uri.file = relative.substring(lastSlashIndex + 1)
     } else {
-      // No directory structure, just a file
-      uri.file = uri.relative
-      uri.directory = ''
+      uri.file = relative
     }
   }
 
   // Parse query parameters
-  uri.query.replace(queryParser, function (_, key, value) {
-    if (key) uri.queryKey[key] = value
-  })
+  if (query) {
+    for (const [, key, value] of query.matchAll(queryParser)) {
+      if (key) uri.queryKey[key] = value
+    }
+  }
 
   return uri
 }

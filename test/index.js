@@ -24,8 +24,7 @@ test('avoid DoS attacks', t => {
   const input = '0' + '@/@.44'.repeat(45502) + '\x00.'.repeat(45502)
   const now = new Date()
   parseURI(input)
-  t.true(Date.now() - now < 1000)
-  console.time('[ + ] Time passed -> ')
+  t.true(Date.now() - now < 100)
 })
 
 test('empty relative path', t => {
