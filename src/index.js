@@ -3,85 +3,70 @@
 module.exports = (str, opts = {}) => {
   if (!str) return undefined
 
-  const queryParser = /(?:^|&)([^&=]*)=?([^&]*)/g
-  const patterns = {
-    // Captures: protocol, authority, path, query, fragment
-    // Updated to handle schemes without '//' like mailto:, tel:, etc.
-    strict:
-      /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*)|([^?#]*?))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/,
-    // Loose pattern updated to handle mailto and similar schemes
-    loose:
-      /^(?:([^:/?#.]+):)?(?:\/\/([^/?#]*)|([^?#]*?))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
-  }
+  // Single regex pattern - handles both strict and loose modes
+  const pattern = opts.strictMode
+    ? /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*)|([^?#]*?))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
+    : /^(?:([^:/?#.]+):)?(?:\/\/([^/?#]*)|([^?#]*?))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?/
 
-  const pattern = opts.strictMode ? patterns.strict : patterns.loose
   const matches = pattern.exec(str)
   if (!matches) return undefined
 
-  // Destructure regex matches for clarity
-  // Note: matches[2] is authority (with //), matches[3] is scheme-specific part (without //)
   const [
     ,
     protocol = '',
     authority = '',
     schemePart = '',
-    relative = '',
+    path = '',
     query = '',
     anchor = ''
   ] = matches
 
-  // For schemes like mailto:, the email goes in schemePart, not authority
-  const actualAuthority = authority || ''
-  const actualRelative = authority ? relative : schemePart + relative
+  const actualPath = authority ? path : schemePart + path
+  const pathname = authority
+    ? actualPath.startsWith('/')
+      ? actualPath
+      : actualPath
+        ? `/${actualPath}`
+        : '/'
+    : actualPath
 
-  // Initialize all URI components
-  const uri = {
-    source: str,
-    protocol,
-    authority: actualAuthority,
-    relative: actualRelative,
-    query,
-    anchor,
-    userInfo: '',
-    user: '',
-    password: '',
-    host: '',
-    port: '',
-    path: actualRelative,
-    directory: '',
-    file: '',
-    queryKey: {}
+  // Parse authority components
+  const authMatch = authority
+    ? /^(?:(([^:@]*)(?::([^:@]*))?)?@)?([^:/?#]*)(?::(\d*))?/.exec(authority)
+    : null
+  const [
+    ,
+    userInfo = '',
+    username = '',
+    password = '',
+    hostname = '',
+    rawPort = ''
+  ] = authMatch || []
+
+  // Handle default ports and build components
+  const port =
+    (rawPort === '80' && protocol === 'http') ||
+    (rawPort === '443' && protocol === 'https')
+      ? ''
+      : rawPort
+  const host = port ? `${hostname}:${port}` : hostname
+  const origin =
+    protocol === 'http' || protocol === 'https' ? `${protocol}://${host}` : ''
+
+  return {
+    href: str,
+    protocol: protocol ? `${protocol}:` : '',
+    authority,
+    search: query ? `?${query}` : '',
+    hash: anchor ? `#${anchor}` : '',
+    userInfo,
+    username,
+    password,
+    host,
+    hostname,
+    port,
+    pathname,
+    searchParams: new URLSearchParams(query),
+    origin
   }
-
-  // Parse authority into user info, host, and port
-  if (actualAuthority) {
-    const authorityPattern =
-      /^(?:(([^:@]*)(?::([^:@]*))?)?@)?([^:/?#]*)(?::(\d*))?/
-    const authorityMatches = authorityPattern.exec(actualAuthority)
-    if (authorityMatches) {
-      const [, userInfo = '', user = '', password = '', host = '', port = ''] =
-        authorityMatches
-      Object.assign(uri, { userInfo, user, password, host, port })
-    }
-  }
-
-  // Parse the relative part into directory and file
-  if (actualRelative) {
-    const lastSlashIndex = actualRelative.lastIndexOf('/')
-    if (lastSlashIndex > -1) {
-      uri.directory = actualRelative.substring(0, lastSlashIndex + 1)
-      uri.file = actualRelative.substring(lastSlashIndex + 1)
-    } else {
-      uri.file = actualRelative
-    }
-  }
-
-  // Parse query parameters
-  if (query) {
-    for (const [, key, value] of query.matchAll(queryParser)) {
-      if (key) uri.queryKey[key] = value
-    }
-  }
-
-  return uri
 }
