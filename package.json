@@ -1,6 +1,6 @@
 {
   "name": "parse-uri",
-  "description": "Lightweight module for parsing an URI",
+  "description": "Lightweight URI parser that splits a string into protocol, host, path, query, and fragment parts.",
   "homepage": "https://github.com/Kikobeats/parse-uri",
   "version": "2.0.6",
   "main": "src/index.js",
@@ -18,8 +18,16 @@
     "url": "https://github.com/Kikobeats/parse-uri/issues"
   },
   "keywords": [
-    "URI",
-    "parse"
+    "fragment",
+    "host",
+    "parse",
+    "parser",
+    "path",
+    "protocol",
+    "query",
+    "uri",
+    "url",
+    "whatwg"
   ],
   "devDependencies": {
     "@commitlint/cli": "latest",
@@ -70,6 +78,7 @@
   },
   "nano-staged": {
     "*.js": [
+      "npx @kikobeats/prettier-standard",
       "standard --fix"
     ],
     "*.md": [
